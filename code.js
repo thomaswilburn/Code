@@ -412,75 +412,6 @@
 		}
 	}();
 
-	var Base = chain({}, {
-		create: function(refinements) {
-			return chain(this, refinements);
-		},
-		implement: function(Interface) {
-			Interface.call(this);
-		}
-	});
-	augment(Base, [IEventDispatcher, IObservable]);
-
-	var Collection = chain({}, {
-		items: null,
-		length: null,
-		cursor: null,
-		init: function() {
-			this.map = map.bind(this.items);
-			this.reduce = reduce.bind(this.items);
-			this.items = []; //must be assigned here to prevent prototype link
-			this.cursor = 0;
-			this.length = 0;
-		},
-		create: function(refinements) {
-			return chain(this, refinements);
-		},
-		implement: function(Interface) {
-			Interface.call(this);
-		},
-		get: function(index) {
-			if (typeof index === 'undefined') return this.items;
-			return this.items[index];
-		},
-		set: function(index, value) {
-			this.items[index] = value;
-			this.length = this.items.length;
-			this.trigger('change');
-		},
-		push: function() {
-			this.items.push.apply(this.items, arguments);
-			this.length = this.items.length;
-			this.trigger('change');
-		},
-		pop: function() {
-			var item = this.items.pop();
-			this.length = this.items.length;
-			this.trigger('change');
-			return item;
-		},
-		map: noop, //see init for binding
-		reduce: noop,
-		remove: function(item) {
-			this.items = map(this.items, function(a) {
-				if (a === item) {
-					return null;
-				}
-				return a;
-			});
-			this.trigger('change');
-		},
-		next: function() {
-			if (this.cursor >= this.length) return null;
-			return this.items[this.cursor++];
-		},
-		reset: function() {
-			this.cursor = 0;
-		}
-	});
-	augment(Collection, IEventDispatcher);
-
-
 	// SHIMS FOR BASE64
 	if (typeof window.atob === 'undefined') {
 		window.atob = decode64;
@@ -503,8 +434,6 @@
 		decode64: decode64,
 		IEventDispatcher: IEventDispatcher,
 		IObservable: IObservable,
-		Base: Base,
-		Collection: Collection,
 		Future: Future
 	};
 
