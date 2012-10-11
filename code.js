@@ -107,6 +107,7 @@
 			var deferred = new Future();
 			args.push(deferred.resolve);
 			f.apply(context, args);
+			return deferred;
 		};
 		return wrapper;
 	};
