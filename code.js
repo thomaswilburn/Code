@@ -367,53 +367,54 @@
 		return decoded;
 	};
 
-	var IEventDispatcher = function() {
-		var attach = function(target) {
-			var channel = {};
-			var bind = function(event, callback) {
-				if (!this.hasOwnProperty('bind')) {
-					attach(this);
-					return this.bind.apply(this, arguments);
-				}
-				if (!channel[event]) channel[event] = [];
-				channel[event].push(callback);
-			};
-			var unbind = function(event, callback) {
-				if (!this.hasOwnProperty('unbind')) {
-					attach(this);
-					return this.unbind.apply(this, arguments);
-				};
-				if (!callback) {
-					channel[event] = [];
-				} else {
-					var filtered = [];
-					for (var i = 0; i < channel[event].length; i++) {
-						if (channel[event][i] != callback) {
-							filtered.push(channel[event][i]);
-						}
+	var PubSub = function(onto) {
+
+		if (!onto && !(this instanceof PubSub)) return new PubSub();
+		var target = onto || this;
+
+		var channels = {};
+
+		target.on = function(event, callback, context) {
+			if (!channels[event]) {
+				channels[event] = [];
+			}
+			var channel = channels[event];
+			context = context || {};
+			channel.push({
+				callback: callback,
+				context: context
+			});
+		};
+
+		target.off = function(event, callback) {
+			if (!channels[event]) return;
+			if (!callback) {
+				channels[event] = [];
+			} else {
+				var channel = channels[event];
+				var filtered = [];
+				for (var i = 0; i < channel.length; i++) {
+					if (channel[i].callback !== callback) {
+						filtered.push(channel[i]);
 					}
-					channel[event] = filtered;
 				}
-			};
-			var trigger = function(event, data) {
-				if (!this.hasOwnProperty('trigger')) {
-					attach(this);
-					return this.trigger.apply(this, arguments);
-				}
-				if (!channel[event]) return;
-				for (var i = 0; i < channel[event].length; i++) {
-					var f = channel[event][i];
-					f(data);
-				}
-			};
-			target.bind = target.subscribe = bind;
-			target.unbind = target.unsubscribe = unbind;
-			target.trigger = target.publish = trigger;
+				channels[event] = filtered;
+			}
 		}
-		return function() {
-			attach(this);
+
+		target.trigger = function(event) {
+			if (!channels[event]) return;
+			var args = Array.prototype.slice.call(arguments, 1);
+			var callbacks = channels[event].slice(); //copy, so it's immutable during firing.
+			for (var i = 0; i < callbacks.length; i++) {
+				var f = callbacks[i].callback;
+				var c = callbacks[i].context;
+				setTimeout(function() {
+					f.apply(c, args); //trigger each in the next tick.
+				}, 0);
+			}
 		}
-	}();
+	};
 
 	// SHIMS FOR BASE64
 	if (typeof window.atob === 'undefined') {
@@ -433,7 +434,8 @@
 		reduce: reduce,
 		encode64: encode64,
 		decode64: decode64,
-		IEventDispatcher: IEventDispatcher,
+		PubSub: PubSub,
+		ps: new PubSub(),
 		Future: Future
 	};
 

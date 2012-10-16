@@ -31,11 +31,12 @@ Useful for debugging across the AS3-JS bridge without locking up the Flash VM.
 * map/reduce() - standard map/reduce functions. Shimmed onto Array.prototype in
 older browsers.
 
+* PubSub - a constructor for PubSub objects. You can pass in an object to have
+it extended with the on/off/trigger methods. Code also makes a singleton available
+as code.ps.
+
 * encode64/decode64() - standard Base64 translation functions. Shimmed onto
 atob() and btoa() in older browsers.
-
-* IEventDispatcher - an interface for creating listeners. *Deprecated*, will be
-removed in favor of a pub/sub object.
 
 In addition, Code shims Function.bind in older browsers, just because it's too
 useful to be without.
@@ -48,7 +49,5 @@ be a replacement for large libraries, but a simple script I can pull in for
 quick projects. Here are a few other things I plan on adding in the future:
 
 * A simple state machine, for handling UI and asynchronous processes.
-
-* Pub/Sub, to replace the existing event interface.
 
 * The Bag collection type from Grue.
