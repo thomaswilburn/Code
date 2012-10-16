@@ -163,7 +163,7 @@
 			}
 			if (typeof copy !== 'undefined') {
 				target[key] = copy;
-	        	}
+	    }
 		}
 		return target;
 	};
@@ -209,6 +209,15 @@
 		}
 		if (prewrapped && typeof $ !== 'undefined') return $(output);
 		return output;
+	};
+
+	var desync = function(f) {
+		return function() {
+			var args = arguments;
+			setTimeout(function() {
+				f.apply(this, args);
+			}, 4);
+		}
 	};
 
 	var xmlObjectify = function(xml) {
@@ -406,20 +415,6 @@
 		}
 	}();
 
-	var IObservable = function() {
-		var get = function(property) {
-			return this[property];
-		};
-		var set = function(property, value) {
-			this[property] = value;
-			this.trigger('change');
-		}
-		return function() {
-			this.get = get;
-			this.set = set;
-		}
-	}();
-
 	// SHIMS FOR BASE64
 	if (typeof window.atob === 'undefined') {
 		window.atob = decode64;
@@ -439,7 +434,6 @@
 		encode64: encode64,
 		decode64: decode64,
 		IEventDispatcher: IEventDispatcher,
-		IObservable: IObservable,
 		Future: Future
 	};
 
