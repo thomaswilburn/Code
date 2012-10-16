@@ -211,38 +211,6 @@
 		return output;
 	};
 
-	var chain = function(from, extension) {
-		var f = function() {
-			if (this.init) this.init();
-		};
-		f.prototype = from;
-		var r = new f();
-		if (extension) {
-			extend(r, extension);
-		}
-		r.constructor = f;
-		r.constructor.prototype = r;
-
-		return r;
-	};
-
-	var augment = function(target, Interfaces) {
-		if (typeof Interfaces == 'function') Interfaces = [Interfaces];
-		for (var i = 0; i < Interfaces.length; i++) {
-			Interfaces[i].call(target);
-		}
-		return target;
-	};
-
-	var desync = function(f) {
-	    return function() {
-	        var args = arguments;
-	        setTimeout(function() {
-	            f.apply(this, args);
-	        }, 4);
-	    }
-	};
-
 	var xmlObjectify = function(xml) {
 		if (xml.jquery) {
 			xml = xml.get(0);
@@ -316,6 +284,8 @@
 		return mapped;
 	};
 
+	if (!Array.prototype.map) Array.prototype.map = map;
+
 	var reduce = function(a, f, memo) {
 		if (typeof a == 'function') {
 			memo = f;
@@ -328,6 +298,8 @@
 		}
 		return memo;
 	};
+
+	if (!Array.prototype.reduce) Array.prototype.reduce = reduce;
 
 	var encode64 = function(plaintext) {
 		var encoded = "";
@@ -460,8 +432,6 @@
 		extend: extend,
 		commafy: commafy,
 		inflate: inflate,
-		chain: chain,
-		augment: augment,
 		desync: desync,
 		xmlObjectify: xmlObjectify,
 		map: map,
