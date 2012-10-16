@@ -26,6 +26,10 @@
 	};
 
 	var Future = function() {
+		if (arguments.length) {
+			var args = Array.prototype.slice.call(arguments);
+			return Future.when.apply({}, args);
+		}
 		if (!(this instanceof Future)) return new Future();
 
 		var resolved = false;
