@@ -26,6 +26,8 @@
 	};
 
 	var Future = function() {
+		if (!(this instanceof Future)) return new Future();
+
 		var resolved = false;
 		var failed = false;
 		var whenDone = [];
@@ -111,6 +113,35 @@
 		};
 		return wrapper;
 	};
+
+	Future.when = function() {
+		var args = Array.prototype.slice.call(arguments);
+		var resolvedCount = 0;
+		var resolved = [];
+		var when = new Future();
+		for (var i = 0; i < args.length; i++) {
+			var result = args[i]();
+			if (typeof result.done != 'function') {
+				resolved[i] = result;
+				resolvedCount++;
+			} else {
+				var onResult = (function(n) {
+					return function() {
+						resolved[n] = Array.prototype.slice.call(arguments);
+						resolvedCount++;
+						if (resolvedCount == args.length) {
+							when.resolve(resolved);
+						}
+					}
+				})(i);
+				result.done(onResult);
+			}
+		}
+		if (resolvedCount == args.length) {
+			when.resolve(resolved);
+		}
+		return when;
+	}
 
 	var assert = function(assertion, message) {
 		if (assertion) {
