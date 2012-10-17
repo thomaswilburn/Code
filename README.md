@@ -35,6 +35,28 @@ older browsers.
 it extended with the on/off/trigger methods. Code also makes a singleton available
 as code.ps.
 
+* Bag - an unsorted collection type for objects, supporting some Underscore-like
+features, as well as a "query" method for filtering against an arbitrary set of
+attributes.
+
+* Machine - a simple state machine that takes in an object with the following
+characteristics:
+
+    var stateList = {
+      state_name: {
+        enter_function: function() {},
+        exit_function: function() {},
+        events: {
+          event_name: "destination_state"
+        }
+      }
+    }
+
+You can change the machine's state by calling trigger() and passing in a
+string matching an event in the current state. Bad events are simply ignored.
+Any additional arguments given to trigger() will be passed on to the enter()
+and exit() functions, which are bound to the context of the Machine instance.
+
 * encode64/decode64() - standard Base64 translation functions. Shimmed onto
 atob() and btoa() in older browsers.
 
@@ -46,8 +68,5 @@ For example, the inheritance functions chain() and augment() were removed
 recently since I almost never use them (in favor of regular JavaScript
 inheritance). I intend to be ruthless about this, since Code is not meant to
 be a replacement for large libraries, but a simple script I can pull in for
-quick projects. Here are a few other things I plan on adding in the future:
-
-* A simple state machine, for handling UI and asynchronous processes.
-
-* The Bag collection type from Grue.
+quick projects. I've added it to github primarily to keep a history of excised
+features, just in case.

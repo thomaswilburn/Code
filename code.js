@@ -367,6 +367,12 @@
 		return decoded;
 	};
 
+	// SHIMS FOR BASE64
+	if (typeof window.atob === 'undefined') {
+		window.atob = decode64;
+		window.btoa = encode64;
+	}
+
 	var PubSub = function(onto) {
 
 		if (!onto && !(this instanceof PubSub)) return new PubSub();
@@ -416,11 +422,190 @@
 		}
 	};
 
-	// SHIMS FOR BASE64
-	if (typeof window.atob === 'undefined') {
-		window.atob = decode64;
-		window.btoa = encode64;
-	}
+	var Bag = function(array) {
+	  if (!(this instanceof Bag)) return new Bag(array);
+	  this.items = [];
+	  if (array) {
+	    if (typeof array.toArray != 'undefined') {
+	      array = array.toArray();
+	    }
+	    this.items = this.items.concat(array);
+	  }
+	  this.length = this.items.length;
+	};
+	Bag.prototype = {
+		push: function() {
+		  this.items.push.apply(this.items, Array.prototype.slice.call(arguments));
+		  this.length = this.items.length;
+		  return this;
+		},
+		remove: function(item) {
+		  var remaining = [];
+		  for (var i = 0; i < this.items.length; i++) {
+		    if (this.items[i] != item) remaining.push(this.items[i]);
+		  }
+		  this.items = remaining;
+		  this.length = this.items.length;
+		  return this;
+		},
+		first: function() {
+		  return this.items[0];
+		},
+		at: function(n) {
+		  return this.items[n];
+		},
+		filter: function(f) {
+		  var filtered = [];
+		  for (var i = 0; i < this.items.length; i++) {
+		    if (f(this.items[i])) filtered.push(this.items[i]);
+		  }
+		  return new Bag(filtered);
+		},
+		map: function(f) {
+		  var mapped = this.items.map(f);
+		  return new Bag(mapped);
+		},
+		mapGet: function(p) {
+		  return this.items.map(function(item) {
+		    return item[p];
+		  });
+		},
+		mapSet: function(p, value) {
+		  for (var i = 0; i < this.items.length; i++) {
+		    this.items[i][p] = value;
+		  }
+		  return this;
+		},
+		invoke: function(name) {
+		  var args = Array.prototype.slice.call(arguments, 1);
+		  var map = [];
+		  for (var i = 0; i < this.items.length; i++) {
+		    var item = this.items[i];
+		    if (typeof item[name] != 'function') continue;
+		    var result = item[name].apply(item, args);
+		    if (typeof result != 'undefined') {
+		      map.push(result);
+		    }
+		  }
+		  return new Bag(map);
+		},
+		each: function(f) {
+		  for (var i = 0; i < this.items.length; i++) {
+		    f(this.items[i]);
+		  }
+		  return this;
+		},
+		toArray: function() {
+		  return this.items;
+		},
+		combine: function() {
+		  var args = Array.prototype.slice.call(arguments);
+		  for (var i = 0; i < args.length; i++) {
+		    var adding = args[i];
+		    if (adding instanceof Bag) {
+		      this.items = this.items.concat(adding.items);
+		    } else {
+		      this.items = this.items.concat(adding);
+		    }
+		    this.length = this.items.length;
+		    return this;
+		  }
+		},
+		query: function(selectors) {
+		  selectors = selectors.split(',');
+		  var matcher = '^\\s*(\\w+)\\s*([<>!~$*^?=]{0,2})\\s*\\"{0,1}([^\\"]*)\\"{0,1}\\s*$';
+		  var tests = {
+		    '=': function(a, b) { return a === b },
+		    '>': function(a, b) { return a > b },
+		    '>=': function(a, b) { return a >= b },
+		    '<': function(a, b) { return a <= b },
+		    '!=': function(a, b) { return a !== b },
+		    '?': function(a) { return a },
+		    '~=': function(a, b) {
+		      if (typeof a.length == 'undefined') return false;
+		      if (typeof Array.prototype.indexOf != 'undefined') {
+		        return a.indexOf(b) != -1;
+		      } else {
+		        for (var i = 0; i < a.length; i++) {
+		          if (a[i] == b) return true;
+		        }
+		        return false;
+		      }
+		    },
+		    '^=': function(a, b) {
+		      if (typeof a != 'string') return false;
+		      return a.search(b) == 0
+		    },
+		    '$=': function(a, b) {
+		      if (typeof a != 'string') return false;
+		      return a.search(b) == a.length - b.length
+		    },
+		    '*=': function(a, b) {
+		      if (typeof a != 'string') return false;
+		      return a.search(b) != -1
+		    },
+		    fail: function() { return false }
+		  }
+		  for (var i = 0; i < selectors.length; i++) {
+		    var parts = new RegExp(matcher).exec(selectors[i]);
+		    if (!parts) throw('Bad selector: ' + selectors[i]);
+		    selectors[i] = {
+		      key: parts[1],
+		      operator: parts[2]
+		    };
+		    var value = parts[3].replace(/^\s*|\s*$/g, '');
+		    if (value == "true" || value == "false") {
+		      value = value == "true";
+		    } else if (value != "" && !isNaN(value)) {
+		      value = parseFloat(value);
+		    }
+		    selectors[i].value = value;
+		  };
+		  var passed = [];
+		  for (var i = 0; i < this.items.length; i++) {
+		    var item = this.items[i];
+		    var hit = true;
+		    for (var j = 0; j < selectors.length; j++) {
+		      var s = selectors[j];
+		      if (typeof item[s.key] == 'undefined') {
+		        hit = false;
+		        break;
+		      } else if (s.operator) {
+		        var f = tests[s.operator] || tests.fail;
+		        if (!f(item[s.key], s.value)) {
+		          hit = false;
+		          break;
+		        }
+		      }
+		    }
+		    if (hit) {
+		      passed.push(item);
+		    }
+		  }
+		  return new Bag(passed);
+		}
+	};
+
+	var Machine = function(states, startAs) {
+		if (!(this instanceof Machine)) return new Machine(states, startAs);
+		this.states = states;
+		this.currentState = startAs || null;
+	};
+	Machine.prototype = {
+		states: null,
+		currentState: null,
+		trigger: function(event) {
+			var args = Array.prototype.slice.call(arguments, 1);
+			var state = this.states[this.currentState];
+			var dest = state.events[event];
+			if (dest && this.states[dest]) {
+				if (typeof state.exit == 'function') state.exit.apply(this, args);
+				this.currentState = dest;
+				state = this.states[dest];
+				if (typeof state.enter == 'function') state.enter.apply(this, args);
+			}
+		}
+	};
 
 	// Public module object
 	var code = {
@@ -436,7 +621,9 @@
 		decode64: decode64,
 		PubSub: PubSub,
 		ps: new PubSub(),
-		Future: Future
+		Future: Future,
+		Bag: Bag,
+		Machine: Machine
 	};
 
 	//require.js support
