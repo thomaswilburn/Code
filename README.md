@@ -42,15 +42,17 @@ attributes.
 * Machine - a simple state machine that takes in an object with the following
 characteristics:
 
-    var stateList = {
-      state_name: {
-        enter_function: function() {},
-        exit_function: function() {},
-        events: {
-          event_name: "destination_state"
-        }
-      }
+```javascript
+var stateList = {
+  state_name: {
+    enter_function: function() {},
+    exit_function: function() {},
+    events: {
+      event_name: "destination_state"
     }
+  }
+}
+```
 
 You can change the machine's state by calling trigger() and passing in a
 string matching an event in the current state. Bad events are simply ignored.
