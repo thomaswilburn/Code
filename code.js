@@ -37,38 +37,37 @@
     var whenDone = [];
     var whenFailed = [];
     var whenEver = [];
-    var args;
 
     this.resolve = function() {
       if (resolved) return;
       resolved = true;
-      args = Array.prototype.slice.apply(arguments);
+      var args = Array.prototype.slice.apply(arguments);
       var callbacks = whenDone.concat(whenEver);
       for (var i = 0; i < callbacks.length; i++) {
         var f = callbacks[i];
         f.apply(this, arguments);
       }
-    }
+    };
 
     this.reject = function() {
       if (resolved) return;
       resolved = true;
       failed = true;
-      args = Array.prototype.slice.apply(arguments);
+      var args = Array.prototype.slice.apply(arguments);
       var callbacks = whenFailed.concat(whenEver);
       for (var i = 0; i < callbacks.length; i++) {
         var f = callbacks[i];
         f.apply(this, arguments);
       }
-    }
+    };
 
     this.isResolved = function() {
       return resolved;
-    }
+    };
 
     this.isFailed = function() {
       return failed;
-    }
+    };
 
     this.done = function(f) {
       if (resolved && !failed) {
@@ -76,7 +75,7 @@
       } else {
         whenDone.push(f);
       }
-    }
+    };
 
     this.fail = function(f) {
       if (resolved && failed) {
@@ -84,7 +83,7 @@
       } else {
         whenFailed.push(f);
       }
-    }
+    };
 
     this.always = function(f) {
       if (resolved) {
@@ -92,7 +91,7 @@
       } else {
         whenEver.push(f);
       }
-    }
+    };
 
     this.promise = function(target) {
       target = target || {};
@@ -102,7 +101,7 @@
       target.isResolved = this.isResolved;
       target.isFailed = this.isFailed;
       return target;
-    }
+    };
 
   };
 
